@@ -1,0 +1,17 @@
+{
+	"prettier.useTabs": true,
+	"prettier.tabWidth": 4,
+	"prettier.singleQuote": false,
+	"prettier.trailingComma": "all",
+	"editor.insertSpaces": false,
+	"editor.indentSize": "tabSize",
+	"editor.detectIndentation": false,
+	"editor.minimap.enabled": false,
+	"editor.foldingImportsByDefault": true,
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll": true,
+		"source.organizeImports": true
+	}
+}
