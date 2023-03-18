@@ -38,6 +38,13 @@
 				"ignoreTemplateLiterals": true
 			}
 		],
+		"react/function-component-definition": [
+			"error",
+			{
+				"namedComponents": "arrow-function",
+				"unnamedComponents": "arrow-function"
+			}
+		],
 		"indent": ["error", "tab", { "SwitchCase": 1 }],
 		"quotes": ["error", "double", { "allowTemplateLiterals": true }],
 		"no-tabs": "off"

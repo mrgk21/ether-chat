@@ -1,8 +1,4 @@
 {
-	"prettier.useTabs": true,
-	"prettier.tabWidth": 4,
-	"prettier.singleQuote": false,
-	"prettier.trailingComma": "all",
 	"editor.insertSpaces": false,
 	"editor.indentSize": "tabSize",
 	"editor.detectIndentation": false,
