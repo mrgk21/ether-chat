@@ -13,7 +13,11 @@ const client = createClient({
 });
 
 const Init = ({ children }: InitProps) => {
-	return <WagmiConfig client={client}>{children}</WagmiConfig>;
+	return (
+		<WagmiConfig client={client}>
+			<div className="flex flex-col h-screen">{children}</div>
+		</WagmiConfig>
+	);
 };
 
 export default Init;
