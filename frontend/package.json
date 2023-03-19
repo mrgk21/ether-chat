@@ -11,9 +11,11 @@
 		"git-check": "$npm_execpath lint && $npm_execpath build"
 	},
 	"dependencies": {
+		"ethers": "^5",
 		"next": "13.2.4",
 		"react": "18.2.0",
-		"react-dom": "18.2.0"
+		"react-dom": "18.2.0",
+		"wagmi": "^0.12.2"
 	},
 	"devDependencies": {
 		"@types/node": "18.15.3",
