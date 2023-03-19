@@ -6,8 +6,8 @@ import "../global.css";
 const App = ({ Component, pageProps }: AppProps) => {
 	return (
 		<Init>
-			<Navbar />;
-			<Component {...pageProps} />;
+			<Navbar />
+			<Component {...pageProps} />
 		</Init>
 	);
 };

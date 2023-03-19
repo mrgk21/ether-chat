@@ -30,7 +30,7 @@ const Navbar = () => {
 	};
 
 	return (
-		<nav className="bg-white px-2 sm:px-4 py-2.5 dark:bg-gray-900 fixed w-full z-20 top-0 left-0 border-b border-gray-200 dark:border-gray-600">
+		<nav className="bg-white px-2 sm:px-4 py-2.5 dark:bg-gray-900 sticky w-full z-20 top-0 left-0 border-b border-gray-200 dark:border-gray-600">
 			<div className="flex flex-wrap items-center mx-auto ">
 				<div className="flex md:order-2 ml-auto items-center">
 					{!_isConnected ? (
