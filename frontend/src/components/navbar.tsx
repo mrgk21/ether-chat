@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 import { InjectedConnector } from "wagmi/connectors/injected";
+import { SocketContext } from "../global.context";
+import { SocketService } from "../services/socket.service";
 
 type itemType = { label: string; name: string; onClick: (_event: React.MouseEvent<HTMLElement>) => void };
 
@@ -10,11 +12,21 @@ interface SidebarProps {
 }
 
 const Navbar = ({ groups, chats }: SidebarProps) => {
+	const { setSocket } = useContext(SocketContext);
+
 	const { signMessageAsync } = useSignMessage({
 		onError: (error) => console.log("error:", error.message),
 	});
+
 	const { address, isConnected } = useAccount({
-		onConnect: ({ address, isReconnected }) => console.log(address, isReconnected),
+		onConnect: ({ address, isReconnected }) => {
+			const socket = new SocketService("user", "abcd").socket;
+			socket.on("connect", () => console.log(address, socket.id));
+			console.log("setting socket");
+
+			// socket not being set correctly
+			setSocket(socket);
+		},
 		onDisconnect: () => console.log("disconnected"),
 	});
 	const { connectAsync } = useConnect({ connector: new InjectedConnector({}) });

@@ -1,5 +1,8 @@
+import { useMemo, useState } from "react";
+import { Socket } from "socket.io-client";
 import { configureChains, createClient, mainnet, WagmiConfig } from "wagmi";
 import { publicProvider } from "wagmi/providers/public";
+import { SocketContext } from "../global.context";
 
 interface InitProps {
 	children: React.ReactNode;
@@ -13,10 +16,15 @@ const client = createClient({
 });
 
 const Init = ({ children }: InitProps) => {
+	const [socket, setSocket] = useState<Socket | null>(null);
+	const socketObj = useMemo(() => ({ socket, setSocket }), [socket]);
+
 	return (
-		<WagmiConfig client={client}>
-			<div className="flex flex-col h-screen">{children}</div>
-		</WagmiConfig>
+		<SocketContext.Provider value={socketObj}>
+			<WagmiConfig client={client}>
+				<div className="flex flex-col h-screen">{children}</div>
+			</WagmiConfig>
+		</SocketContext.Provider>
 	);
 };
 

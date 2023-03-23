@@ -1,19 +1,32 @@
 import * as _ from "lodash";
 import Image from "next/image";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import ChatBox from "../components/chatBox";
+import { SocketContext } from "../global.context";
+import { SocketResponse } from "../types";
 
 const Home = () => {
 	const [chats, setChats] = useState<Array<number>>([1]);
+	const { socket } = useContext(SocketContext);
 
 	const handleMoreChats = () => {
 		const tempChats = [...chats];
 		const max = _.max(chats);
-		if (!max) return;
-		tempChats.push(max + 1);
-		console.log(tempChats);
 
+		if (!max) return;
+
+		tempChats.push(max + 1);
 		setChats(tempChats);
+
+		console.log("index:", socket);
+
+		socket?.emit("join-peer", null, (response: SocketResponse) => {
+			if (!response.ack) {
+				console.log(response.error?.message);
+				return;
+			}
+			console.log(response.payload?.message);
+		});
 	};
 
 	const deleteChats = (id: number) => {

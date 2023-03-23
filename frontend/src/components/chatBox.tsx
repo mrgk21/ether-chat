@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useEffect, useState } from "react";
+import { SocketContext } from "../global.context";
 import MessageBox from "./messageBox";
 
 interface ChatBoxProps {
@@ -10,6 +11,9 @@ interface ChatBoxProps {
 }
 
 const ChatBox = ({ id, index, size, addChat, removeChat }: ChatBoxProps) => {
+	const { socket } = useContext(SocketContext);
+
+	useEffect(() => console.log(socket), [socket]);
 	const [msg, setMsg] = useState("");
 	const [chats, setChats] = useState<Array<string>>([]);
 
@@ -19,6 +23,16 @@ const ChatBox = ({ id, index, size, addChat, removeChat }: ChatBoxProps) => {
 			const tempChats = [...chats];
 			tempChats.push(msg);
 			setChats(tempChats);
+
+			socket?.emit("message", msg, (response: { ack: boolean; payload: object }) => {
+				console.log(response, socket);
+
+				if (!response || !response.ack) {
+					const tempChats = [...chats];
+					tempChats.pop();
+					setChats(tempChats);
+				}
+			});
 			setMsg("");
 		}
 	};
