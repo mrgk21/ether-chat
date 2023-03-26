@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { SocketContext } from "../global.context";
 import MessageBox from "./messageBox";
 
@@ -6,14 +6,14 @@ interface ChatBoxProps {
 	id: number;
 	index: number;
 	size: number;
+	peerId: string;
 	addChat: () => void;
 	removeChat: (index: number) => void;
 }
 
-const ChatBox = ({ id, index, size, addChat, removeChat }: ChatBoxProps) => {
+const ChatBox = ({ id, index, size, peerId, addChat, removeChat }: ChatBoxProps) => {
 	const { socket } = useContext(SocketContext);
 
-	useEffect(() => console.log(socket), [socket]);
 	const [msg, setMsg] = useState("");
 	const [chats, setChats] = useState<Array<string>>([]);
 
@@ -44,6 +44,7 @@ const ChatBox = ({ id, index, size, addChat, removeChat }: ChatBoxProps) => {
 			} p-2 m-2 border-[1px] flex flex-col`}
 		>
 			<div className="flex flex-col flex-grow h-full">
+				<p className="pl-2 font-mono text-sm">Connected to: {peerId}</p>
 				<div className="flex-grow p-2 m-1 dark:bg-slate-300 dark:border-gray-400 border-[1px] rounded-md overflow-scroll ">
 					{chats.length > 0 ? chats.map((item) => <MessageBox text={item} />) : null}
 				</div>

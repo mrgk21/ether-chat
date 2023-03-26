@@ -13,6 +13,7 @@ interface SidebarProps {
 
 const Navbar = ({ groups, chats }: SidebarProps) => {
 	const { setSocket } = useContext(SocketContext);
+	const [requests, setRequests] = useState(0);
 
 	const { signMessageAsync } = useSignMessage({
 		onError: (error) => console.log("error:", error.message),
@@ -24,7 +25,7 @@ const Navbar = ({ groups, chats }: SidebarProps) => {
 			socket.on("connect", () => console.log(address, socket.id));
 			console.log("setting socket");
 
-			// socket not being set correctly
+			// setSocket() is not used inside socket.on("connect", ...) because its used for rerendering later
 			setSocket(socket);
 		},
 		onDisconnect: () => console.log("disconnected"),
