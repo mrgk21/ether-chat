@@ -36,43 +36,46 @@ io.of("user").on("connection", (socket) => {
 
 	// initiate room search
 	socket.on("search-peer", async (arg, cb) => {
-		try {
-			const selfId = socket.id;
-			const availablePeers = [...(await io.of("user").fetchSockets()).map((item) => item.id)];
-			console.log({ availablePeers });
-			// const x = await io.of("user").fetchSockets();
-			// console.log(x.);
+		// try {
+		const selfId = socket.id;
+		const availablePeers = [...(await io.of("user").fetchSockets()).map((item) => item.id)];
+		console.log({ availablePeers });
+		// const x = await io.of("user").fetchSockets();
+		// console.log(x.);
 
-			let existingPeers: any = availablePeers.map((peerId) =>
-				rooms.map((room) => {
-					const equal = _.isEqual(_.sortBy([selfId, peerId]), _.sortBy(room.peers));
-					if (equal) return peerId;
-					return null;
-				}),
-			);
-			existingPeers = _.compact(_.flattenDeep(existingPeers));
-			_.remove(availablePeers, (item) => item === selfId);
-			_.remove(availablePeers, (item) => (existingPeers as Array<string>).includes(item));
+		let existingPeers: any = availablePeers.map((peerId) =>
+			rooms.map((room) => {
+				const equal = _.isEqual(_.sortBy([selfId, peerId]), _.sortBy(room.peers));
+				if (equal) return peerId;
+				return null;
+			}),
+		);
+		existingPeers = _.compact(_.flattenDeep(existingPeers));
+		_.remove(availablePeers, (item) => item === selfId);
+		_.remove(availablePeers, (item) => (existingPeers as Array<string>).includes(item));
 
-			if (availablePeers.length === 0) {
-				cb({ ack: false, error: { message: "There is no one to talk to" } });
-				return;
-			}
-			console.log({ availablePeers, rooms });
-			const peerId = availablePeers[_.random(availablePeers.length - 1)];
-
-			users.get(peerId)?.emit("chat-request", { from: selfId });
-
-			cb({ ack: true, payload: { message: `Requested ${peerId}` } });
-		} catch (error) {
-			console.log(error);
+		if (availablePeers.length === 0) {
+			cb({ ack: false, error: { message: "There is no one to talk to" } });
+			return;
 		}
+		console.log({ availablePeers, rooms });
+		const peerId = availablePeers[_.random(availablePeers.length - 1)];
+
+		users.get(peerId)?.emit("chat-request", { from: selfId });
+
+		cb({ ack: true, payload: { message: `Requested ${peerId}` } });
+		// } catch (error) {
+		// 	console.log(error);
+		// }
 	});
 
-	socket.on("chat-accept", (arg) => {
+	socket.on("chat-accept", (arg, cb) => {
+		console.log("inside chat-accept:", socket.id);
+
 		const room: Room = { id: uuiv4(), peers: [socket.id, arg.from] };
 		rooms.push(room);
 		socket.join(room.id);
+		cb({ ack: true });
 	});
 
 	// remove

@@ -1,7 +1,8 @@
 import * as _ from "lodash";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useReducer, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import ChatBox from "../components/chatBox";
+import Request from "../components/toasts/request";
 import { ChatResponse } from "../components/toasts/types";
 import { SocketContext } from "../global.context";
 import { SocketResponse } from "../types";
@@ -11,36 +12,61 @@ interface Chat {
 	peerId: string;
 }
 
+enum ActionTypes {
+	REQUEST = "REQUEST",
+	NEW_CHAT = "NEW_CHAT",
+}
+
+interface Action {
+	type: ActionTypes;
+	payload: any;
+}
+
+const initState: { chats1: Chat[] } = { chats1: [] };
+
+const reducer = (state: typeof initState, action: Action): typeof initState => {
+	switch (action.type) {
+		case "NEW_CHAT": {
+			const tempChats = [...state.chats1];
+			let max = _.max(tempChats.map((item) => item.id));
+			if (!max) max = 1;
+			tempChats.push({ id: max + 1, peerId: action.payload.peerId });
+			return { ...state, chats1: tempChats };
+		}
+	}
+	return state;
+};
+
 const Home = () => {
 	const { socket } = useContext(SocketContext);
 	const [chats, setChats] = useState<Array<Chat>>([]);
-
-	console.log(chats);
+	const [{ chats1 }, dispatch] = useReducer(reducer, initState);
 
 	useEffect(() => {
 		if (!socket) return;
 		socket.on("connect", () => {
 			console.log("socket connected!");
-
-			setChats([{ id: 1, peerId: socket?.id as string }]);
+			dispatch({ type: ActionTypes.NEW_CHAT, payload: { peerId: socket?.id as string } });
+		});
+		socket?.on("chat-request", (response: { from: string }) => {
+			toast(
+				<Request
+					peerId={response.from}
+					handleAccept={() => handleNewChat(ChatResponse.ACCEPT, response.from)}
+					handleDeny={() => handleNewChat(ChatResponse.DENY)}
+				/>,
+			);
 		});
 	}, [socket]);
 
 	const handleNewChat = (res: ChatResponse, peerId = "") => {
-		console.log(chats);
+		toast.dismiss();
+		if (res === ChatResponse.DENY) return;
 
-		// toast.dismiss();
-		// if (res === ChatResponse.DENY) return;
-		// const tempChats = [...chats];
-		// const max = _.max(tempChats.map((item) => item.id));
-		// console.log(max, tempChats);
-
-		// socket?.emit("chat-accept", { from: peerId });
-
-		// if (!max) return;
-
-		// tempChats.push({ id: max + 1, peerId });
-		// setChats(tempChats);
+		socket?.emit("chat-accept", { from: peerId }, (response: { ack: boolean; payload: { from: string } }) => {
+			if (!response.ack) return;
+			dispatch({ type: ActionTypes.NEW_CHAT, payload: { peerId } });
+		});
 	};
 
 	const requestChat = () => {
@@ -51,18 +77,6 @@ const Home = () => {
 			}
 			toast(response.payload?.message as string);
 		});
-
-		// state not available here, due to a global call, possibly solve it with web workers
-		// socket?.timeout(2000).on("chat-request", (response: { from: string }) => {
-		// 	console.log(response); // show a pop up
-		// 	toast(
-		// 		<Request
-		// 			peerId={response.from}
-		// 			handleAccept={() => handleNewChat(ChatResponse.ACCEPT, response.from)}
-		// 			handleDeny={() => handleNewChat(ChatResponse.DENY)}
-		// 		/>,
-		// 	);
-		// });
 	};
 
 	const deleteChats = (id: number) => {
@@ -72,14 +86,14 @@ const Home = () => {
 
 	return (
 		<div>
-			{chats.length > 0 && (
+			{chats1.length > 0 && (
 				<div className="grid grid-cols-2 h-[93vh] auto-rows-fr">
-					{chats.map((chat, index) => (
+					{chats1.map((chat, index) => (
 						<ChatBox
 							id={chat.id}
 							peerId={chat.peerId}
 							index={index}
-							size={chats.length}
+							size={chats1.length}
 							key={chat.id}
 							addChat={requestChat}
 							removeChat={deleteChats}
