@@ -36,12 +36,9 @@ io.of("user").on("connection", (socket) => {
 
 	// initiate room search
 	socket.on("search-peer", async (arg, cb) => {
-		// try {
 		const selfId = socket.id;
 		const availablePeers = [...(await io.of("user").fetchSockets()).map((item) => item.id)];
 		console.log({ availablePeers });
-		// const x = await io.of("user").fetchSockets();
-		// console.log(x.);
 
 		let existingPeers: any = availablePeers.map((peerId) =>
 			rooms.map((room) => {
@@ -64,18 +61,21 @@ io.of("user").on("connection", (socket) => {
 		users.get(peerId)?.emit("chat-request", { from: selfId });
 
 		cb({ ack: true, payload: { message: `Requested ${peerId}` } });
-		// } catch (error) {
-		// 	console.log(error);
-		// }
 	});
 
-	socket.on("chat-accept", (arg, cb) => {
+	socket.on("peer-accept", (arg, cb) => {
 		console.log("inside chat-accept:", socket.id);
 
 		const room: Room = { id: uuiv4(), peers: [socket.id, arg.from] };
 		rooms.push(room);
+
+		// join peers inside a room
 		socket.join(room.id);
-		cb({ ack: true });
+		users.get(arg.from)?.join(room.id);
+
+		console.log("peer-accept:", room);
+		users.get(arg.from)?.emit("peer-response", { ack: true, payload: { roomId: room.id, peerId: socket.id } });
+		cb({ ack: true, payload: { roomId: room.id, peerId: arg.from } });
 	});
 
 	// remove
