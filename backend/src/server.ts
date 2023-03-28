@@ -35,7 +35,7 @@ io.of("user").on("connection", (socket) => {
 	socket.broadcast.emit("sample", socket.listenerCount);
 
 	// initiate room search
-	socket.on("search-peer", async (arg, cb) => {
+	socket.on("search-peer", async (arg, cb): Promise<void> => {
 		const selfId = socket.id;
 		const availablePeers = [...(await io.of("user").fetchSockets()).map((item) => item.id)];
 		console.log({ availablePeers });
@@ -52,18 +52,17 @@ io.of("user").on("connection", (socket) => {
 		_.remove(availablePeers, (item) => (existingPeers as Array<string>).includes(item));
 
 		if (availablePeers.length === 0) {
-			cb({ ack: false, error: { message: "There is no one to talk to" } });
-			return;
+			return cb({ ack: false, error: { message: "There is no one to talk to" } });
 		}
 		console.log({ availablePeers, rooms });
 		const peerId = availablePeers[_.random(availablePeers.length - 1)];
 
 		users.get(peerId)?.emit("chat-request", { from: selfId });
 
-		cb({ ack: true, payload: { message: `Requested ${peerId}` } });
+		return cb({ ack: true, payload: { message: `Requested ${peerId}` } });
 	});
 
-	socket.on("peer-accept", (arg, cb) => {
+	socket.on("peer-accept", (arg, cb): void => {
 		console.log("inside chat-accept:", socket.id);
 
 		const room: Room = { id: uuiv4(), peers: [socket.id, arg.from] };
@@ -75,12 +74,18 @@ io.of("user").on("connection", (socket) => {
 
 		console.log("peer-accept:", room);
 		users.get(arg.from)?.emit("peer-response", { ack: true, payload: { roomId: room.id, peerId: socket.id } });
-		cb({ ack: true, payload: { roomId: room.id, peerId: arg.from } });
+		return cb({ ack: true, payload: { roomId: room.id, peerId: arg.from } });
 	});
 
-	// remove
-	socket.on("message", (arg, cb) => {
-		cb({ ack: true, payload: { message: "server: hello from server" } });
+	socket.on("message", (arg, cb): void => {
+		const { content, roomId } = arg;
+		const room = _.filter(rooms, (item) => item.id === roomId)[0];
+
+		console.log(room, socket.id);
+
+		if (!room) return cb({ ack: false });
+		socket.to(room.id).emit("message", { ack: true, payload: { content, roomId } });
+		return cb({ ack: true, payload: { message: "server: hello from server" } });
 	});
 
 	socket.on("sampleData", (data: any) => console.log(data));

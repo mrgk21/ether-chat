@@ -17,6 +17,7 @@ enum ActionTypes {
 	REQUEST = "REQUEST",
 	NEW_CHAT = "NEW_CHAT",
 	DELETE_CHAT = "DELETE_CHAT",
+	MESSAGE = "MESSAGE",
 }
 
 interface Action {
@@ -24,20 +25,25 @@ interface Action {
 	payload: any;
 }
 
-const initState: { chats1: Chat[] } = { chats1: [] };
+const initState: { chats: Chat[] } = { chats: [] };
 
 const reducer = (state: typeof initState, action: Action): typeof initState => {
 	switch (action.type) {
 		case "NEW_CHAT": {
-			const tempChats = [...state.chats1];
-			let max = _.max(tempChats.map((item) => item.id));
-			if (!max) max = 1;
-			tempChats.push({ id: max + 1, peerId: action.payload.peerId, roomId: action.payload.peerId });
-			return { ...state, chats1: tempChats };
+			const tempChats = [...state.chats];
+
+			if (tempChats.length === 0) {
+				tempChats.push({ id: 0, peerId: action.payload.peerId, roomId: action.payload.roomId });
+				return { ...state, chats: tempChats };
+			}
+			const max = _.maxBy(tempChats, (item) => item.id)?.id;
+			tempChats.push({ id: max! + 1, peerId: action.payload.peerId, roomId: action.payload.roomId });
+			console.log("after", { tempChats });
+			return { ...state, chats: tempChats };
 		}
 		case "DELETE_CHAT": {
-			const tempChats = _.filter(state.chats1, (item) => item.id !== action.payload.id);
-			return { ...state, chats1: tempChats };
+			const tempChats = _.filter(state.chats, (item) => item.id !== action.payload.id);
+			return { ...state, chats: tempChats };
 		}
 	}
 	return state;
@@ -45,12 +51,12 @@ const reducer = (state: typeof initState, action: Action): typeof initState => {
 
 const Home = () => {
 	const { socket } = useContext(SocketContext);
-	const [{ chats1 }, dispatch] = useReducer(reducer, initState);
+	const [{ chats }, dispatch] = useReducer(reducer, initState);
 
 	useEffect(() => {
 		if (!socket) return;
 		socket.on("connect", () => {
-			console.log("socket connected!");
+			console.log("socket connected!", socket.id);
 			dispatch({ type: ActionTypes.NEW_CHAT, payload: { peerId: socket?.id as string, roomId: "self" } });
 		});
 		socket?.on("chat-request", (response: { from: string }) => {
@@ -68,10 +74,19 @@ const Home = () => {
 		toast.dismiss();
 		if (res === ChatResponse.DENY) return;
 
-		socket?.emit("peer-accept", { from: peerId }, (response: { ack: boolean; payload: { from: string } }) => {
-			if (!response.ack) return;
-			dispatch({ type: ActionTypes.NEW_CHAT, payload: { peerId } });
-		});
+		socket?.emit(
+			"peer-accept",
+			{ from: peerId },
+			(response: { ack: boolean; payload: { roomId: string; peerId: string } }) => {
+				if (!response) return;
+				const {
+					ack,
+					payload: { roomId, peerId },
+				} = response;
+				if (!ack) return;
+				dispatch({ type: ActionTypes.NEW_CHAT, payload: { peerId, roomId } });
+			},
+		);
 	};
 
 	const requestChat = () => {
@@ -83,6 +98,7 @@ const Home = () => {
 			toast(response.payload?.message as string);
 		});
 		socket?.on("peer-response", (response: { ack: boolean; payload: { peerId: string; roomId: string } }) => {
+			if (!response) return;
 			const {
 				ack,
 				payload: { peerId, roomId },
@@ -100,14 +116,14 @@ const Home = () => {
 
 	return (
 		<div>
-			{chats1.length > 0 && (
+			{chats.length > 0 && (
 				<div className="grid grid-cols-2 h-[93vh] auto-rows-fr">
-					{chats1.map((chat, index) => (
+					{chats.map((chat, index) => (
 						<ChatBox
 							id={chat.id}
-							peerId={chat.peerId}
+							peerDetails={{ peerId: chat.peerId, roomId: chat.roomId }}
 							index={index}
-							size={chats1.length}
+							size={chats.length}
 							key={chat.id}
 							addChat={requestChat}
 							removeChat={deleteChats}
